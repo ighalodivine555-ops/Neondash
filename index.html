@@ -181,7 +181,7 @@
     .panel {
         width: 100%;
         max-width: 360px;
-        padding: 32px 24px;
+        padding: 28px 22px;
         text-align: center;
         border: 1px solid rgba(0, 242, 255, .35);
         border-radius: 16px;
@@ -192,7 +192,7 @@
     }
 
     .logo {
-        font-size: 38px;
+        font-size: 34px;
         line-height: .92;
         font-weight: 900;
         letter-spacing: -1px;
@@ -203,7 +203,7 @@
     }
 
     .subLogo {
-        margin-top: 12px;
+        margin-top: 10px;
         font-size: 9px;
         letter-spacing: 4px;
         color: #64748b;
@@ -211,7 +211,7 @@
     }
 
     .description {
-        margin: 24px 0;
+        margin: 20px 0;
         color: #94a3b8;
         font-size: 11px;
         line-height: 1.6;
@@ -221,7 +221,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
     }
 
     .instruction {
@@ -245,7 +245,7 @@
         width: 100%;
         border: 0;
         border-radius: 10px;
-        padding: 16px;
+        padding: 14px;
         color: #030408;
         background: #00f2ff;
         font-weight: 900;
@@ -254,10 +254,18 @@
         cursor: pointer;
         box-shadow: 0 0 25px rgba(0, 242, 255, .35);
         transition: transform .1s ease, background .2s ease;
+        margin-top: 8px;
     }
 
     button:active {
         transform: scale(.97);
+    }
+
+    .shareBtn {
+        background: transparent !important;
+        color: #00f2ff !important;
+        border: 1px solid rgba(0, 242, 255, .5) !important;
+        box-shadow: none !important;
     }
 
     #gameOverTitle {
@@ -269,11 +277,11 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin: 22px 0;
+        margin: 18px 0;
     }
 
     .result {
-        padding: 12px;
+        padding: 10px;
         background: rgba(255, 255, 255, .03);
         border: 1px solid rgba(255, 255, 255, .06);
         border-radius: 8px;
@@ -290,7 +298,7 @@
     }
 
     .result strong {
-        font-size: 20px;
+        font-size: 18px;
         color: #f8fafc;
         font-weight: 900;
     }
@@ -436,6 +444,10 @@
                 REBOOT SYSTEM
             </button>
 
+            <button class="shareBtn" id="shareButton">
+                SHARE TO WHATSAPP 📲
+            </button>
+
         </div>
 
     </div>
@@ -447,21 +459,16 @@
 <script>
 "use strict";
 
-/* =========================================================
-   NEONDASH // TACTICAL ARCADE 3.0
-   Upgraded professional sci-fi drone graphics & vector feel
-   ========================================================= */
-
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const shell = document.getElementById("gameShell");
-
 const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 
 const startButton = document.getElementById("startButton");
 const restartButton = document.getElementById("restartButton");
+const shareButton = document.getElementById("shareButton");
 
 const scoreValue = document.getElementById("scoreValue");
 const comboValue = document.getElementById("comboValue");
@@ -474,11 +481,6 @@ const finalNear = document.getElementById("finalNear");
 
 const statusEl = document.getElementById("status");
 const toast = document.getElementById("toast");
-
-
-/* =========================================================
-   CANVAS
-   ========================================================= */
 
 let W = 420;
 let H = 760;
@@ -502,11 +504,6 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-
-/* =========================================================
-   SAFE STORAGE
-   ========================================================= */
-
 function getBestScore() {
     try {
         return Number(localStorage.getItem("neondash_best")) || 0;
@@ -520,11 +517,6 @@ function saveBestScore(value) {
         localStorage.setItem("neondash_best", String(value));
     } catch {}
 }
-
-
-/* =========================================================
-   AUDIO
-   ========================================================= */
 
 let audioContext = null;
 
@@ -546,59 +538,34 @@ function beep(frequency = 500, duration = .07, type = "square", volume = .02) {
     try {
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
-
         oscillator.type = type;
         oscillator.frequency.value = frequency;
-
         gain.gain.setValueAtTime(volume, audioContext.currentTime);
         gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + duration);
-
         oscillator.connect(gain);
         gain.connect(audioContext.destination);
-
         oscillator.start();
         oscillator.stop(audioContext.currentTime + duration);
     } catch {}
 }
 
-
-/* =========================================================
-   HAPTICS
-   ========================================================= */
-
 function vibrate(pattern) {
     if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
-        try {
-            navigator.vibrate(pattern);
-        } catch {}
+        try { navigator.vibrate(pattern); } catch {}
     }
 }
 
-
-/* =========================================================
-   GAME STATE
-   ========================================================= */
-
-const STATE = {
-    MENU: "menu",
-    PLAYING: "playing",
-    PAUSED: "paused",
-    GAMEOVER: "gameover"
-};
-
+const STATE = { MENU: "menu", PLAYING: "playing", PAUSED: "paused", GAMEOVER: "gameover" };
 let gameState = STATE.MENU;
 
 let score = 0;
 let combo = 0;
 let bestCombo = 0;
 let nearMisses = 0;
-
 let speed = 3.0;
 let difficulty = 1;
-
 let elapsed = 0;
 let lastTime = 0;
-
 let spawnTimer = 0;
 let powerTimer = 0;
 let shake = 0;
@@ -609,22 +576,7 @@ let shieldTimer = 0;
 let multiplierTimer = 0;
 let slowTimer = 0;
 
-
-/* =========================================================
-   PLAYER (HIGH-TECH STEALTH DRONE)
-   ========================================================= */
-
-const player = {
-    x: 90,
-    y: 350,
-    width: 44,
-    height: 24,
-    velocityY: 0,
-    gravity: 0.44,
-    flapPower: -7.4,
-    rotation: 0,
-    trail: []
-};
+const player = { x: 90, y: 350, width: 44, height: 24, velocityY: 0, gravity: 0.44, flapPower: -7.4, rotation: 0, trail: [] };
 
 function resetPlayer() {
     player.x = W * .22;
@@ -634,19 +586,12 @@ function resetPlayer() {
     player.trail.length = 0;
 }
 
-
-/* =========================================================
-   OBSTACLES (SECURITY GATES)
-   ========================================================= */
-
 const obstacles = [];
-
 function createObstacle() {
     const minGap = 140;
     const maxGap = 200;
     const gapSize = Math.max(120, maxGap - difficulty * 3.5);
     const margin = 90;
-
     const gapY = margin + Math.random() * (H - margin * 2 - gapSize);
 
     obstacles.push({
@@ -660,39 +605,18 @@ function createObstacle() {
     });
 }
 
-
-/* =========================================================
-   POWER UPS
-   ========================================================= */
-
 const powerups = [];
 const POWER_TYPES = ["shield", "double", "slow"];
-
 function createPowerup() {
     if (Math.random() > .5) return;
-
     const type = POWER_TYPES[Math.floor(Math.random() * POWER_TYPES.length)];
-
-    powerups.push({
-        x: W + 100,
-        y: 120 + Math.random() * Math.max(80, H - 260),
-        radius: 13,
-        type,
-        rotation: 0
-    });
+    powerups.push({ x: W + 100, y: 120 + Math.random() * Math.max(80, H - 260), radius: 13, type, rotation: 0 });
 }
 
-
-/* =========================================================
-   PARTICLES
-   ========================================================= */
-
 const particles = [];
-
 function particle(x, y, options = {}) {
     particles.push({
-        x,
-        y,
+        x, y,
         vx: options.vx ?? (Math.random() - .5) * 4,
         vy: options.vy ?? (Math.random() - .5) * 4,
         life: options.life ?? 25,
@@ -706,44 +630,20 @@ function burst(x, y, color = "#00f2ff", count = 16) {
     for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
         const force = 1.5 + Math.random() * 4.5;
-        particle(x, y, {
-            vx: Math.cos(angle) * force,
-            vy: Math.sin(angle) * force,
-            color,
-            size: 1 + Math.random() * 2.5,
-            life: 18 + Math.random() * 20
-        });
+        particle(x, y, { vx: Math.cos(angle) * force, vy: Math.sin(angle) * force, color, size: 1 + Math.random() * 2.5, life: 18 + Math.random() * 20 });
     }
 }
 
-
-/* =========================================================
-   BACKGROUND DATA
-   ========================================================= */
-
 const stars = [];
-
 function createStars() {
     stars.length = 0;
     for (let i = 0; i < 70; i++) {
-        stars.push({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            size: Math.random() * 1.8,
-            speed: .2 + Math.random() * .8,
-            alpha: .3 + Math.random() * .7
-        });
+        stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 1.8, speed: .2 + Math.random() * .8, alpha: .3 + Math.random() * .7 });
     }
 }
 createStars();
 
-
-/* =========================================================
-   INPUT SYSTEM
-   ========================================================= */
-
 const activePointers = new Set();
-
 canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
 canvas.addEventListener("pointerup", handlePointerUp, { passive: false });
 canvas.addEventListener("pointercancel", handlePointerUp, { passive: false });
@@ -753,37 +653,21 @@ function handlePointerDown(e) {
     e.preventDefault();
     if (activePointers.has(e.pointerId)) return;
     activePointers.add(e.pointerId);
-
-    try {
-        canvas.setPointerCapture(e.pointerId);
-    } catch {}
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
 
     if (gameState !== STATE.PLAYING) return;
-
     const now = performance.now();
-    const timeSinceLastTap = now - lastTapTime;
-    const isDoubleTap = timeSinceLastTap > 0 && timeSinceLastTap < 280;
+    const isDoubleTap = (now - lastTapTime > 0) && (now - lastTapTime < 280);
 
     flap();
-
-    if (isDoubleTap) {
-        activateBoost();
-    }
-
+    if (isDoubleTap) activateBoost();
     lastTapTime = now;
 }
 
 function handlePointerUp(e) {
     activePointers.delete(e.pointerId);
-    try {
-        canvas.releasePointerCapture(e.pointerId);
-    } catch {}
+    try { canvas.releasePointerCapture(e.pointerId); } catch {}
 }
-
-
-/* =========================================================
-   KEYBOARD & BUTTONS
-   ========================================================= */
 
 window.addEventListener("keydown", e => {
     if (e.code === "Space" || e.code === "ArrowUp") {
@@ -792,7 +676,7 @@ window.addEventListener("keydown", e => {
         initAudio();
         if (gameState === STATE.PLAYING) {
             const now = performance.now();
-            const isDouble = now - lastTapTime < 280;
+            const isDouble = (now - lastTapTime < 280);
             flap();
             if (isDouble) activateBoost();
             lastTapTime = now;
@@ -800,21 +684,143 @@ window.addEventListener("keydown", e => {
     }
 });
 
-startButton.addEventListener("click", e => {
-    e.preventDefault();
-    initAudio();
-    startGame();
-});
-
-restartButton.addEventListener("click", e => {
-    e.preventDefault();
-    initAudio();
-    startGame();
-});
+startButton.addEventListener("click", e => { e.preventDefault(); initAudio(); startGame(); });
+restartButton.addEventListener("click", e => { e.preventDefault(); initAudio(); startGame(); });
+shareButton.addEventListener("click", e => { e.preventDefault(); generateAndShareCard(); });
 
 
 /* =========================================================
-   ACTIONS
+   DIRECT NATIVE SHARE (WHATSAPP / STATUS)
+   ========================================================= */
+
+async function generateAndShareCard() {
+    const shareCanvas = document.createElement("canvas");
+    shareCanvas.width = 600;
+    shareCanvas.height = 600;
+    const sCtx = shareCanvas.getContext("2d");
+
+    // Background Gradient
+    const bgGrad = sCtx.createLinearGradient(0, 0, 600, 600);
+    bgGrad.addColorStop(0, "#050811");
+    bgGrad.addColorStop(1, "#0d1b2a");
+    sCtx.fillStyle = bgGrad;
+    sCtx.fillRect(0, 0, 600, 600);
+
+    // Grid lines
+    sCtx.strokeStyle = "rgba(0, 242, 255, .08)";
+    sCtx.lineWidth = 1;
+    for (let i = 0; i < 600; i += 30) {
+        sCtx.beginPath(); sCtx.moveTo(i, 0); sCtx.lineTo(i, 600); sCtx.stroke();
+        sCtx.beginPath(); sCtx.moveTo(0, i); sCtx.lineTo(600, i); sCtx.stroke();
+    }
+
+    // Border Frame
+    sCtx.strokeStyle = "#00f2ff";
+    sCtx.lineWidth = 4;
+    sCtx.shadowBlur = 15;
+    sCtx.shadowColor = "#00f2ff";
+    sCtx.strokeRect(25, 25, 550, 550);
+    sCtx.shadowBlur = 0;
+
+    // Header & Title
+    sCtx.fillStyle = "#ff007f";
+    sCtx.font = "900 14px sans-serif";
+    sCtx.letterSpacing = "4px";
+    sCtx.textAlign = "center";
+    sCtx.fillText("TACTICAL ARCADE RECORD", 300, 75);
+
+    sCtx.fillStyle = "#ffffff";
+    sCtx.font = "900 38px sans-serif";
+    sCtx.fillText("NEONDASH", 300, 125);
+
+    // Final Score Box
+    sCtx.fillStyle = "rgba(3, 8, 18, 0.85)";
+    sCtx.strokeStyle = "rgba(0, 242, 255, 0.3)";
+    sCtx.lineWidth = 2;
+    sCtx.fillRect(60, 160, 220, 130);
+    sCtx.strokeRect(60, 160, 220, 130);
+
+    sCtx.fillStyle = "#7b9bb0";
+    sCtx.font = "700 11px sans-serif";
+    sCtx.fillText("FINAL SCORE", 170, 190);
+    sCtx.fillStyle = "#00f2ff";
+    sCtx.font = "900 48px sans-serif";
+    sCtx.fillText(score, 170, 255);
+
+    // Combo Box
+    sCtx.fillStyle = "rgba(3, 8, 18, 0.85)";
+    sCtx.strokeStyle = "rgba(255, 0, 127, 0.3)";
+    sCtx.lineWidth = 2;
+    sCtx.fillRect(320, 160, 220, 130);
+    sCtx.strokeRect(320, 160, 220, 130);
+
+    sCtx.fillStyle = "#7b9bb0";
+    sCtx.font = "700 11px sans-serif";
+    sCtx.fillText("MAX COMBO", 430, 190);
+    sCtx.fillStyle = "#ff007f";
+    sCtx.font = "900 48px sans-serif";
+    sCtx.fillText("x" + Math.max(1, bestCombo), 430, 255);
+
+    // Near Misses Box
+    sCtx.fillStyle = "rgba(3, 8, 18, 0.85)";
+    sCtx.strokeStyle = "rgba(0, 255, 136, 0.3)";
+    sCtx.lineWidth = 2;
+    sCtx.fillRect(60, 310, 480, 80);
+    sCtx.strokeRect(60, 310, 480, 80);
+
+    sCtx.fillStyle = "#7b9bb0";
+    sCtx.font = "700 11px sans-serif";
+    sCtx.fillText("CLOSE PROXIMITY NEAR MISSES", 300, 338);
+    sCtx.fillStyle = "#00ff88";
+    sCtx.font = "900 28px sans-serif";
+    sCtx.fillText(nearMisses, 300, 372);
+
+    // Footer Text
+    sCtx.fillStyle = "#94a3b8";
+    sCtx.font = "13px sans-serif";
+    sCtx.fillText("Think you can beat my pilot reflex?", 300, 450);
+
+    sCtx.fillStyle = "#00f2ff";
+    sCtx.font = "900 15px sans-serif";
+    sCtx.fillText("Play Now: " + window.location.href, 300, 485);
+
+    // Convert canvas to image file blob and invoke mobile device sharing sheet
+    shareCanvas.toBlob(async (blob) => {
+        const file = new File([blob], "neondash-score.png", { type: "image/png" });
+        const shareText = `⚡ I scored ${score} on NEONDASH! Think you have faster reflexes? Play here: ${window.location.href}`;
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    title: "NeonDash Score",
+                    text: shareText,
+                    files: [file]
+                });
+            } catch (err) {
+                console.log("Share dismissed", err);
+            }
+        } else if (navigator.share) {
+            // Fallback text share if image files aren't permitted by the browser container
+            try {
+                await navigator.share({
+                    title: "NeonDash Score",
+                    text: shareText
+                });
+            } catch (err) {}
+        } else {
+            // Fallback for laptops/desktop browsers
+            const link = document.createElement("a");
+            link.download = "neondash-score.png";
+            link.href = shareCanvas.toDataURL();
+            link.click();
+            showToast("CARD DOWNLOADED! 📸", "#00f2ff");
+        }
+    }, "image/png");
+}
+
+
+/* =========================================================
+   ACTIONS & GAME LOOP
    ========================================================= */
 
 function flap() {
@@ -857,12 +863,7 @@ function collectPowerup(powerup) {
         beep(320, .12, "sine", .025);
     }
 
-    burst(
-        powerup.x,
-        powerup.y,
-        powerup.type === "shield" ? "#00f2ff" : powerup.type === "double" ? "#ff007f" : "#00ff88",
-        22
-    );
+    burst(powerup.x, powerup.y, powerup.type === "shield" ? "#00f2ff" : powerup.type === "double" ? "#ff007f" : "#00ff88", 22);
     vibrate([10, 25, 10]);
 }
 
@@ -925,11 +926,6 @@ function endGame() {
     }, 400);
 }
 
-
-/* =========================================================
-   SCORING & COMBO
-   ========================================================= */
-
 function addScore(amount = 1) {
     const multiplier = multiplierTimer > 0 ? 2 : 1;
     const comboMultiplier = Math.min(5, 1 + Math.floor(combo / 3));
@@ -958,46 +954,26 @@ function breakCombo() {
     comboValue.textContent = "x1";
 }
 
-
-/* =========================================================
-   COLLISION & NEAR MISS
-   ========================================================= */
-
 function rectanglesOverlap(a, b) {
-    return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-    );
+    return (a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y);
 }
 
 function playerHitsObstacle(obstacle) {
     const padding = 6;
-    const p = {
-        x: player.x + padding,
-        y: player.y + padding,
-        width: player.width - padding * 2,
-        height: player.height - padding * 2
-    };
-
+    const p = { x: player.x + padding, y: player.y + padding, width: player.width - padding * 2, height: player.height - padding * 2 };
     const top = { x: obstacle.x, y: 0, width: obstacle.width, height: obstacle.gapY };
     const bottom = { x: obstacle.x, y: obstacle.gapY + obstacle.gapSize, width: obstacle.width, height: H - (obstacle.gapY + obstacle.gapSize) };
-
     return rectanglesOverlap(p, top) || rectanglesOverlap(p, bottom);
 }
 
 function checkNearMiss(obstacle) {
     if (obstacle.nearChecked) return;
-
     if (obstacle.x < player.x + player.width + 14 && obstacle.x + obstacle.width > player.x - 15) {
         obstacle.nearChecked = true;
-
         const playerTop = player.y;
         const playerBottom = player.y + player.height;
         const gapTop = obstacle.gapY;
         const gapBottom = obstacle.gapY + obstacle.gapSize;
-
         const distanceTop = Math.abs(playerBottom - gapTop);
         const distanceBottom = Math.abs(playerTop - gapBottom);
         const closest = Math.min(distanceTop, distanceBottom);
@@ -1007,7 +983,6 @@ function checkNearMiss(obstacle) {
             combo += 2;
             bestCombo = Math.max(bestCombo, combo);
             addScore(2);
-
             showToast("CLOSE PROXIMITY +2", "#00ff88");
             burst(player.x, player.y, "#00ff88", 14);
             shake = 4;
@@ -1017,14 +992,8 @@ function checkNearMiss(obstacle) {
     }
 }
 
-
-/* =========================================================
-   UPDATE LOOP
-   ========================================================= */
-
 function update(dt) {
     if (gameState !== STATE.PLAYING) return;
-
     elapsed += dt;
 
     boostTimer = Math.max(0, boostTimer - dt);
@@ -1042,29 +1011,17 @@ function update(dt) {
     if (boostTimer > 0) {
         player.y -= .8 * frame;
         if (Math.random() < .5) {
-            particle(player.x, player.y + player.height / 2, {
-                vx: -2.5 - Math.random() * 2,
-                vy: (Math.random() - .5) * 1.5,
-                color: "#ff007f",
-                size: 2,
-                life: 18
-            });
+            particle(player.x, player.y + player.height / 2, { vx: -2.5 - Math.random() * 2, vy: (Math.random() - .5) * 1.5, color: "#ff007f", size: 2, life: 18 });
         }
     }
 
     if (Math.random() < .65) {
-        player.trail.push({
-            x: player.x,
-            y: player.y + player.height / 2,
-            life: 1
-        });
+        player.trail.push({ x: player.x, y: player.y + player.height / 2, life: 1 });
     }
 
     for (let i = player.trail.length - 1; i >= 0; i--) {
         player.trail[i].life -= .06 * frame;
-        if (player.trail[i].life <= 0) {
-            player.trail.splice(i, 1);
-        }
+        if (player.trail[i].life <= 0) player.trail.splice(i, 1);
     }
 
     const worldSpeed = speed * timeScale * frame;
@@ -1084,7 +1041,6 @@ function update(dt) {
     for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
         obstacle.x -= worldSpeed;
-
         checkNearMiss(obstacle);
 
         if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
@@ -1111,9 +1067,7 @@ function update(dt) {
             }
         }
 
-        if (obstacle.x + obstacle.width < -50) {
-            obstacles.splice(i, 1);
-        }
+        if (obstacle.x + obstacle.width < -50) obstacles.splice(i, 1);
     }
 
     for (let i = powerups.length - 1; i >= 0; i--) {
@@ -1131,9 +1085,7 @@ function update(dt) {
             continue;
         }
 
-        if (powerup.x < -50) {
-            powerups.splice(i, 1);
-        }
+        if (powerup.x < -50) powerups.splice(i, 1);
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -1162,21 +1114,11 @@ function update(dt) {
     const activePower = Math.max(shieldTimer, multiplierTimer, slowTimer, boostTimer);
     powerFill.style.width = Math.min(100, activePower / maxPower * 100) + "%";
 
-    if (shieldTimer > 0) {
-        powerFill.style.background = "#00f2ff";
-    } else if (multiplierTimer > 0) {
-        powerFill.style.background = "#ff007f";
-    } else if (slowTimer > 0) {
-        powerFill.style.background = "#00ff88";
-    } else {
-        powerFill.style.background = "linear-gradient(90deg, #00f2ff, #ff007f)";
-    }
+    if (shieldTimer > 0) powerFill.style.background = "#00f2ff";
+    else if (multiplierTimer > 0) powerFill.style.background = "#ff007f";
+    else if (slowTimer > 0) powerFill.style.background = "#00ff88";
+    else powerFill.style.background = "linear-gradient(90deg, #00f2ff, #ff007f)";
 }
-
-
-/* =========================================================
-   RENDER SYSTEM (HIGH-TECH VECTOR GRAPHICS)
-   ========================================================= */
 
 function drawBackground() {
     const gradient = ctx.createLinearGradient(0, 0, 0, H);
@@ -1187,38 +1129,27 @@ function drawBackground() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, W, H);
 
-    // Stars
     for (const star of stars) {
         star.x -= star.speed * (speed / 3);
         if (star.x < -5) star.x = W + 5;
-
         ctx.globalAlpha = star.alpha;
         ctx.fillStyle = "#a5f3fc";
         ctx.fillRect(star.x, star.y, star.size, star.size);
     }
     ctx.globalAlpha = 1;
 
-    // Cyber Perspective Grid
     ctx.strokeStyle = "rgba(0, 242, 255, .04)";
     ctx.lineWidth = 1;
     const gridSize = 40;
     const offset = (elapsed * speed * .05) % gridSize;
 
     for (let x = -gridSize + offset; x < W + gridSize; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, H * .6);
-        ctx.lineTo(x, H);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, H * .6); ctx.lineTo(x, H); ctx.stroke();
     }
-
     for (let y = H * .6; y < H; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
 
-    // Skyline silhouettes
     const buildingWidth = 42;
     const buildingOffset = (elapsed * speed * .12) % buildingWidth;
 
@@ -1230,21 +1161,11 @@ function drawBackground() {
         ctx.fillStyle = "rgba(4, 9, 18, .92)";
         ctx.fillRect(x, y, buildingWidth - 4, bHeight);
 
-        // Neon windows
         ctx.fillStyle = "rgba(0, 242, 255, .12)";
         for (let wy = y + 14; wy < H - 10; wy += 18) {
-            if (Math.sin(wy * 2.5 + x) > .15) {
-                ctx.fillRect(x + 8, wy, 5, 3);
-            }
+            if (Math.sin(wy * 2.5 + x) > .15) ctx.fillRect(x + 8, wy, 5, 3);
         }
     }
-
-    // Horizon glow
-    const horizon = ctx.createLinearGradient(0, H * .55, 0, H * .78);
-    horizon.addColorStop(0, "rgba(0, 242, 255, .08)");
-    horizon.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = horizon;
-    ctx.fillRect(0, H * .55, W, H * .23);
 }
 
 function drawObstacle(obstacle) {
@@ -1254,42 +1175,17 @@ function drawObstacle(obstacle) {
     const gapBottom = obstacle.gapY + obstacle.gapSize;
 
     ctx.save();
-
-    // Glow
     ctx.shadowBlur = 15;
     ctx.shadowColor = obstacle.color;
     ctx.fillStyle = "rgba(4, 12, 22, .96)";
 
-    // Top pillar
     ctx.fillRect(x, 0, width, gapTop);
-    // Bottom pillar
     ctx.fillRect(x, gapBottom, width, H - gapBottom);
 
     ctx.shadowBlur = 0;
-
-    // Laser Edge Caps
     ctx.fillStyle = obstacle.color;
     ctx.fillRect(x, gapTop - 3, width, 3);
     ctx.fillRect(x, gapBottom, width, 3);
-
-    // Structural Crosshatch
-    ctx.strokeStyle = "rgba(255, 255, 255, .08)";
-    ctx.lineWidth = 1;
-
-    for (let y = 12; y < gapTop; y += 16) {
-        ctx.beginPath();
-        ctx.moveTo(x + 8, y);
-        ctx.lineTo(x + width - 8, y);
-        ctx.stroke();
-    }
-
-    for (let y = gapBottom + 12; y < H; y += 16) {
-        ctx.beginPath();
-        ctx.moveTo(x + 8, y);
-        ctx.lineTo(x + width - 8, y);
-        ctx.stroke();
-    }
-
     ctx.restore();
 }
 
@@ -1317,12 +1213,10 @@ function drawPowerup(powerup) {
 
     const label = powerup.type === "shield" ? "S" : powerup.type === "double" ? "2X" : "T";
     ctx.fillText(label, 0, 0);
-
     ctx.restore();
 }
 
 function drawPlayer() {
-    // Slipstream Trail
     for (let i = 0; i < player.trail.length; i++) {
         const t = player.trail[i];
         ctx.globalAlpha = t.life * .3;
@@ -1335,7 +1229,6 @@ function drawPlayer() {
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
     ctx.rotate(player.rotation);
 
-    // Defensive Shield Barrier Ring
     if (shieldTimer > 0) {
         ctx.beginPath();
         ctx.arc(0, 0, 30, 0, Math.PI * 2);
@@ -1347,27 +1240,24 @@ function drawPlayer() {
         ctx.shadowBlur = 0;
     }
 
-    // Sleek Sci-Fi Stealth Drone Hull (Replacing childish cartoon bird)
     ctx.shadowBlur = boostTimer > 0 ? 25 : 12;
     ctx.shadowColor = boostTimer > 0 ? "#ff007f" : "#00f2ff";
 
-    // Main fuselage (dark titanium chassis with cyan glowing core accents)
     ctx.fillStyle = "#0f172a";
     ctx.strokeStyle = "#94a3b8";
     ctx.lineWidth = 1.5;
 
     ctx.beginPath();
-    ctx.moveTo(24, 0);       // Sleek nose cone
-    ctx.lineTo(4, -10);      // Upper canopy frame
-    ctx.lineTo(-18, -6);     // Rear stabilizer top
-    ctx.lineTo(-12, 0);      // Engine core housing
-    ctx.lineTo(-18, 6);      // Rear stabilizer bottom
-    ctx.lineTo(4, 10);       // Lower chassis line
+    ctx.moveTo(24, 0);
+    ctx.lineTo(4, -10);
+    ctx.lineTo(-18, -6);
+    ctx.lineTo(-12, 0);
+    ctx.lineTo(-18, 6);
+    ctx.lineTo(4, 10);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // High-visibility cockpit visor / optical sensor
     ctx.fillStyle = boostTimer > 0 ? "#ff007f" : "#00f2ff";
     ctx.beginPath();
     ctx.moveTo(14, -2);
@@ -1375,20 +1265,6 @@ function drawPlayer() {
     ctx.lineTo(8, -1);
     ctx.closePath();
     ctx.fill();
-
-    // Sweep-back aerodynamic wing blade
-    ctx.fillStyle = "#1e293b";
-    ctx.strokeStyle = boostTimer > 0 ? "#ff007f" : "#00f2ff";
-    ctx.lineWidth = 1.2;
-
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-10, -12);
-    ctx.lineTo(-6, 0);
-    ctx.lineTo(-10, 12);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
 
     ctx.restore();
 }
@@ -1428,41 +1304,19 @@ function drawActiveStatus() {
 
 function draw() {
     ctx.save();
-
     if (shake > .1) {
-        ctx.translate(
-            (Math.random() - .5) * shake,
-            (Math.random() - .5) * shake
-        );
+        ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
     }
 
     drawBackground();
-
-    for (const obstacle of obstacles) {
-        drawObstacle(obstacle);
-    }
-
-    for (const powerup of powerups) {
-        drawPowerup(powerup);
-    }
-
+    for (const obstacle of obstacles) drawObstacle(obstacle);
+    for (const powerup of powerups) drawPowerup(powerup);
     drawParticles();
     drawPlayer();
-
-    // High-tech scanline overlay
-    ctx.fillStyle = "rgba(255, 255, 255, .012)";
-    for (let y = 0; y < H; y += 3) {
-        ctx.fillRect(0, y, W, 1);
-    }
 
     ctx.restore();
     drawActiveStatus();
 }
-
-
-/* =========================================================
-   GAME LOOP
-   ========================================================= */
 
 function gameLoop(timestamp) {
     if (gameState !== STATE.PLAYING) {
@@ -1483,13 +1337,7 @@ function gameLoop(timestamp) {
     }
 }
 
-
-/* =========================================================
-   TOAST SYSTEM
-   ========================================================= */
-
 let toastTimer = null;
-
 function showToast(message, color = "#00f2ff") {
     toast.textContent = message;
     toast.style.color = color;
@@ -1501,11 +1349,7 @@ function showToast(message, color = "#00f2ff") {
     }, 700);
 }
 
-
-/* =========================================================
-   INITIAL RENDER
-   ========================================================= */
-
+initialRender();
 function initialRender() {
     resetPlayer();
     drawBackground();
@@ -1515,16 +1359,7 @@ function initialRender() {
     powerFill.style.width = "0%";
 }
 
-initialRender();
-
-// Prevent default context menu or gestures
 document.addEventListener("contextmenu", e => e.preventDefault());
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden && gameState === STATE.PLAYING) {
-        gameState = STATE.PAUSED;
-    }
-    lastTime = performance.now();
-});
 </script>
 
 </body>
